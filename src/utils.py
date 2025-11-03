@@ -111,42 +111,6 @@ def normalize(s):
         return text.lower()
     return white_space_fix(remove_articles(remove_punc(lower(s))))
 
-def em(answers1, answers2):
-    if type(answers1) == str:
-        answers1 = [answers1]
-    if type(answers2) == str:
-        answers2 = [answers2]
-    if answers1 is None or answers2 is None:
-        return False
-    answers1 = set(normalize(a) for a in answers1 if a)
-    answers2 = set(normalize(a) for a in answers2 if a)
-    for a1 in answers1:
-        for a2 in answers2:
-            if a1 == a2:
-                return True
-    return False
 
 
-def recall(pred_answers, gold_answers):
-    pred_answers = {normalize(a) for a in pred_answers}
-    gold_answers = {normalize(a) for a in gold_answers}
-    return len(pred_answers.intersection(gold_answers))
 
-def precision(pred_answers, gold_answers):
-    pred_answers = {normalize(a) for a in pred_answers}
-    gold_answers = {normalize(a) for a in gold_answers}
-    return len(pred_answers.intersection(gold_answers))
-
-def precision_recall(pred_answers, gold_answers):
-    micro_rec = recall(pred_answers, gold_answers)
-    micro_pre = precision(pred_answers, gold_answers)
-    macro_rec = micro_rec / len(gold_answers)
-    macro_pre = micro_pre / len(pred_answers)
-    return {
-        'macro_f1': 2 / (1 / macro_rec + 1 / macro_pre) if macro_rec and macro_pre else 0,
-        'macro_rec': macro_rec,
-        'micro_rec': micro_rec,
-        'micro_pre': micro_pre,
-        'micro_pred_total': len(pred_answers),
-        'micro_gold_total': len(gold_answers),
-    }

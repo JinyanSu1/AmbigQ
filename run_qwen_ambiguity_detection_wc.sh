@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# Qwen Ambiguity Detection Script
+# Runs all Qwen models on 3 scenarios: unambiguous, ambiguous original, ambiguous disambiguated
+
+set -e
+
+# Note: Qwen models run locally, no API key needed
+# Change to the script's directory
+cd "$(dirname "$0")"
+
+# Configuration
+DATA_DIR="data"
+OUTPUT_DIR="results_ambiguity_detection_wc"
+SCRIPT_PATH="src/ambiguity_detection.py"
+
+MODELS=(
+    "Qwen/Qwen2.5-7B-Instruct"
+    "Qwen/Qwen2.5-14B-Instruct"
+)
+
+# Data files
+VAL_AMBIG_FILE="${DATA_DIR}/val_ambig.json"
+VAL_UNAMBIG_FILE="${DATA_DIR}/val_unambig.json"
+
+# Create output directory
+mkdir -p "${OUTPUT_DIR}"
+
+# Check if data files exist
+if [ ! -f "${VAL_AMBIG_FILE}" ]; then
+    echo "Error: Data file not found: ${VAL_AMBIG_FILE}"
+    exit 1
+fi
+
+if [ ! -f "${VAL_UNAMBIG_FILE}" ]; then
+    echo "Error: Data file not found: ${VAL_UNAMBIG_FILE}"
+    exit 1
+fi
+
+echo "Starting Qwen ambiguity detection evaluation..."
+echo "Models: ${MODELS[*]}"
+echo "Output: ${OUTPUT_DIR}"
+
+# Function to check if file is complete
+is_file_complete() {
+    local file=$1
+    if [ ! -f "$file" ]; then
+        return 1
+    fi
+    
+    # Check if file has proper JSON structure and contains all expected results
+    if python3 -c "
+import json
+import sys
+try:
+    with open('$file', 'r') as f:
+        data = json.load(f)
+    if 'results' in data and 'total_examples' in data:
+        results_count = len(data['results'])
+        total_examples = data['total_examples']
+        if results_count >= total_examples and total_examples > 0:
+            print('complete')
+        else:
+            print('incomplete')
+    else:
+        print('incomplete')
+except:
+    print('invalid')
+" | grep -q "complete"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to run ambiguity detection
+run_ambiguity_detection() {
+    local model=$1
+    local data_file=$2
+    local is_ambiguous=$3
+    local evaluate_disambiguated=$4
+    local experiment_name=$5
+    
+    echo "Running: ${model} - ${experiment_name}"
+    
+    # Create output filename
+    # Convert model name to safe filename (replace / with _)
+    local safe_model_name=$(echo "${model}" | sed 's|/|_|g')
+    local output_file="${OUTPUT_DIR}/${safe_model_name}_${experiment_name}_ambiguity_detection.json"
+    
+    # Check if file is complete and resume if needed
+    local resume_flag=""
+    if is_file_complete "$output_file"; then
+        echo "  File already complete, skipping..."
+        return 0
+    elif [ -f "$output_file" ]; then
+        # Show progress for incomplete file
+        local current_count=$(python3 -c "
+import json
+try:
+    with open('$output_file', 'r') as f:
+        data = json.load(f)
+    print(len(data.get('results', [])))
+except:
+    print('0')
+")
+        local total_count=$(python3 -c "
+import json
+try:
+    with open('$output_file', 'r') as f:
+        data = json.load(f)
+    print(data.get('total_examples', 0))
+except:
+    print('0')
+")
+        echo "  Resuming from existing file... (${current_count}/${total_count} completed)"
+        resume_flag="--resume"
+    fi
+    
+    # Build command
+    local cmd="python3 ${SCRIPT_PATH} --data_file ${data_file} --model_name ${model} --output_file ${output_file} --use_context"
+    
+    if [ "${is_ambiguous}" = "true" ]; then
+        cmd="${cmd} --is_ambiguous"
+    fi
+    
+    if [ "${evaluate_disambiguated}" = "true" ]; then
+        cmd="${cmd} --evaluate_disambiguated"
+    fi
+    
+    if [ -n "$resume_flag" ]; then
+        cmd="${cmd} ${resume_flag}"
+    fi
+    
+    # Run the command
+    echo "  Command: ${cmd}"
+    ${cmd}
+    
+    if [ $? -eq 0 ]; then
+        echo "  ✓ Completed: ${experiment_name}"
+    else
+        echo "  ✗ Failed: ${experiment_name}"
+        return 1
+    fi
+}
+
+# Run all experiments for each model
+for model in "${MODELS[@]}"; do
+    echo ""
+    echo "=========================================="
+    echo "Processing model: ${model}"
+    echo "=========================================="
+    
+    # Scenario 1: Unambiguous questions
+    run_ambiguity_detection "${model}" "${VAL_UNAMBIG_FILE}" "false" "false" "unambiguous"
+    
+    # Scenario 2: Ambiguous questions (original)
+    run_ambiguity_detection "${model}" "${VAL_AMBIG_FILE}" "true" "false" "ambiguous_original"
+    
+    # Scenario 3: Ambiguous questions (disambiguated)
+    run_ambiguity_detection "${model}" "${VAL_AMBIG_FILE}" "true" "true" "ambiguous_disambiguated"
+    
+    echo "Completed all scenarios for ${model}"
+done
+
+echo ""
+echo "=========================================="
+echo "All experiments completed!"
+echo "Results saved in: ${OUTPUT_DIR}/"
+echo "=========================================="
+
+# List all result files
+echo ""
+echo "Generated files:"
+ls -la "${OUTPUT_DIR}/"*.json 2>/dev/null || echo "No result files found"

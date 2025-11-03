@@ -1,46 +1,120 @@
-# Clarifying Questions
+# LLM Evaluation on AmbigQA Dataset
 
-This is the repository for our paper [Modeling Future Conversation Turns to Teach LLMs to Ask Clarifying Questions](https://arxiv.org/abs/2410.13788).
+This project evaluates various Large Language Models (LLMs) on the AmbigQA dataset for question-answering and ambiguity detection tasks.
 
-For any additional questions, please feel free to contact me. My email can be found in our paper, linked above.
+## Supported Models
 
-## Data
-Our datasets used for training with human-identified answer sets are in `data/ambigqa.train_4k.clarify.jsonl` and `data/ambigqa.dev_4h.clarify.jsonl`.
+### OpenAI Models
+- `gpt-3.5-turbo`
+- `gpt-4`
+- `gpt-4.1`
+- `gpt-4.1-mini`
+- `gpt-4o`
+- `gpt-4o-mini`
 
-Likewise, our datasets with model-identified answer sets can be found in `data/nqopen.train_4k.clarify.jsonl` and `data/nqopen.dev_4h.clarify.jsonl`.
+### Claude Models
+- `claude-sonnet-4-5-20250929`
+- `claude-haiku-4-5-20251001`
 
-## Training & Inference
-The primary scripts used for training can be found in for both stages of training are in `src/sft.py` and `src/dpo.py`.
+### Qwen Models (Local Inference)
+- `Qwen/Qwen2.5-7B-Instruct`
+- `Qwen/Qwen2.5-14B-Instruct`
 
-The `src/inference.py` script contains code for performing all stages of inference: generating direct-answers, clarifying questions, clarifying answers, and answers-with-clarification.
+## Setup
 
-Generations can be be labeled for (simulated) preference with `src/clarifying_rewards.py` and evaluated with `src/metrics.py`.
+1. **Create/Activate Environment:**
+   ```bash
+   # Option 1: Use conda (if you have adaptiverag environment)
+   conda activate adaptiverag
+   
+   # Option 2: Create a new virtual environment
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-## Citations
-If you find our work helpful, please cite us:
+2. **Set API Keys:**
+   ```bash
+   export OPENAI_API_KEY="your_openai_key_here"
+   export ANTHROPIC_API_KEY="your_claude_key_here"
+   # Optional for Qwen models:
+   export HUGGINGFACE_API_KEY="your_hf_key_here"
+   ```
+
+3. **Install Dependencies:**
+   ```bash
+   pip install anthropic transformers torch
+   ```
+
+## Usage
+
+
+
+
+### Run Specific Evaluations
+
+**OpenAI Models (6 models × 3 experiments):**
+```bash
+./run_all_experiments.sh
+```
+
+**Claude Models (2 models × 3 experiments):**
+```bash
+./run_claude_evaluation.sh
+```
+
+**Qwen Models (2 models × 3 experiments):**
+```bash
+./run_qwen_evaluation.sh
+```
+
+**Ambiguity Detection (6 models × 3 experiments):**
+```bash
+./run_all_missing_ambiguity_detection.sh
+```
+
+### Run All in Parallel
+```bash
+./run_all_experiments.sh &
+./run_claude_evaluation.sh &
+./run_qwen_evaluation.sh &
+./run_all_missing_ambiguity_detection.sh &
+```
+
+## Evaluation Types
+
+1. **Unambiguous Questions** - Direct question answering
+2. **Ambiguous Original Questions** - Answering ambiguous questions as-is
+3. **Ambiguous Disambiguated Questions** - Answering clarified versions of ambiguous questions
+4. **Ambiguity Detection** - Classifying questions as ambiguous or unambiguous
+
+## Results
+
+Results are saved in:
+- `results_all_models/` - Main evaluation results
+- `results_ambiguity_detection/` - Ambiguity detection results
+
+Each result file contains detailed metrics including:
+- Recall, Precision, F1 Score
+- Exact Match (EM)
+- Question-level and Example-level metrics
+- Pass@1 for disambiguated questions
+
+## Project Structure
 
 ```
-@article{zhang2025modeling,
-  title={Modeling future conversation turns to teach llms to ask clarifying questions},
-  author={ Zhang, Michael J.Q. and Knox, W. Bradley and Choi, Eunsol },
-  journal={ International Conference on Learning Representations (ICLR) },
-  year={ 2025 }
-}
-```
-
-If you use any of the data from this work, please cite the curators of the original datasets:
-```
-@article{ kwiatkowski2019natural,
-  title={ Natural questions: a benchmark for question answering research},
-  author={ Kwiatkowski, Tom and Palomaki, Jennimaria and Redfield, Olivia and Collins, Michael and Parikh, Ankur and Alberti, Chris and Epstein, Danielle and Polosukhin, Illia and Devlin, Jacob and Lee, Kenton and others },
-  journal={ Transactions of the Association for Computational Linguistics (TACL) },
-  year={ 2019 }
-}
-
-@inproceedings{ min2020ambigqa,
-    title={ {A}mbig{QA}: Answering Ambiguous Open-domain Questions },
-    author={ Min, Sewon and Michael, Julian and Hajishirzi, Hannaneh and Zettlemoyer, Luke },
-    journal={ Proceedings of the Conference on Empirical Methods in Natural Language Processing (EMNLP) },
-    year={ 2020 }
-}
+clarifying_questions/
+├── data/                           # Dataset files
+├── results_all_models/            # Main evaluation results
+├── results_ambiguity_detection/   # Ambiguity detection results
+├── src/                          # Core evaluation scripts
+│   ├── evaluate_flexible.py      # Main evaluation script
+│   ├── evaluate_ambiguity_detection.py  # Ambiguity detection
+│   ├── analyze_ambiguity_results.py    # Results analysis
+│   └── utils.py                  # Utility functions
+├── run_evaluation.sh             # Main entry point
+├── run_all_experiments.sh        # OpenAI models
+├── run_claude_evaluation.sh      # Claude models
+├── run_qwen_evaluation.sh        # Qwen models
+├── run_all_missing_ambiguity_detection.sh  # Ambiguity detection
+└── README.md                     # This file
 ```

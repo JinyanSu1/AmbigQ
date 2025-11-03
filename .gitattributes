@@ -1,0 +1,3 @@
+# Git attributes for automatically handling API keys
+# Note: Using pre-commit hook instead of filters for simplicity
+

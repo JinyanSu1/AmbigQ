@@ -1,0 +1,26 @@
+#!/bin/bash
+# Pre-commit hook to backup and remove API keys before committing
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKUP_FILE="$REPO_ROOT/.api_keys_backup.txt"
+
+# Backup API keys from all shell scripts
+echo "Backing up API keys..."
+> "$BACKUP_FILE"  # Clear backup file
+
+for file in run_*.sh; do
+    if [ -f "$file" ]; then
+        # Extract API key lines and save to backup
+        grep -h "^export \(OPENAI\|ANTHROPIC\)_API_KEY=" "$file" >> "$BACKUP_FILE" 2>/dev/null || true
+        echo "FILE:$file" >> "$BACKUP_FILE"
+        
+        # Remove API key lines from the file
+        sed -i.bak '/^export \(OPENAI\|ANTHROPIC\)_API_KEY=sk-[^"]*/d' "$file" 2>/dev/null || true
+        rm -f "$file.bak" 2>/dev/null || true
+    fi
+done
+
+if [ -s "$BACKUP_FILE" ]; then
+    echo "API keys backed up to .api_keys_backup.txt (will be restored after commit)"
+fi

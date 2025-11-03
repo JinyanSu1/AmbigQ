@@ -1,0 +1,27 @@
+#!/bin/bash
+# Post-commit hook to restore API keys after committing
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKUP_FILE="$REPO_ROOT/.api_keys_backup.txt"
+
+# Restore API keys from backup
+if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+    echo "Restoring API keys..."
+    
+    current_file=""
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^FILE: ]]; then
+            current_file="${line#FILE:}"
+        elif [[ "$line" =~ ^export.*API_KEY= ]] && [ -n "$current_file" ] && [ -f "$current_file" ]; then
+            # Add the API key line after "set -e" if not already present
+            if ! grep -q "^export.*API_KEY=" "$current_file"; then
+                sed -i "/^set -e$/a\\$line" "$current_file"
+            fi
+        fi
+    done < "$BACKUP_FILE"
+    
+    echo "API keys restored."
+    # Keep backup file for safety (it's gitignored)
+fi
+

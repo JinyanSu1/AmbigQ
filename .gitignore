@@ -1,0 +1,53 @@
+# Data files
+data/
+*.json
+!requirements.txt
+!package*.json
+
+# Results and outputs
+results_*/
+ambiguous_answer_coverage_analysis.json
+*.tex
+context_comparison_table.tex
+ambiguity_detection_comparison_table.tex
+judge_comparison_tables.tex
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment variables
+.env
+.env.local
+*.env
+
+# Local API keys backup (created during commit, restored after)
+.api_keys_backup.txt
+
+# Local API keys and git hooks (if you want to customize)
+.githooks.local
+api_keys.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+
