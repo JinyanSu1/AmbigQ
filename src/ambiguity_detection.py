@@ -283,19 +283,27 @@ def evaluate_ambiguity_detection(data_file: str, model_name: str, output_file: s
                 existing_data.get('evaluate_disambiguated') == evaluate_disambiguated):
                 
                 results = existing_data.get('results', [])
-                correct_predictions = existing_data.get('correct_predictions', 0)
-                total_predictions = existing_data.get('total_examples', 0)
-                
+                # Recount from the saved results: 'total_examples' is the size of
+                # the dataset, not the number of predictions made so far
+                correct_predictions = sum(1 for r in results if r.get('correct', False))
+                total_predictions = len(results)
+
                 # Calculate start index based on existing results
                 if evaluate_disambiguated:
-                    # For disambiguated questions, count unique original examples processed
+                    # For disambiguated questions, resume after the last original
+                    # example that has results. Examples without disambiguated
+                    # questions leave no results, so counting unique ids would
+                    # undercount and re-run (duplicate) already-saved examples.
                     processed_original_ids = set()
                     for result in results:
                         if 'original_id' in result:
                             processed_original_ids.add(result['original_id'])
                         else:
                             processed_original_ids.add(result['id'])
-                    start_index = len(processed_original_ids)
+                    start_index = 0
+                    for idx, example in enumerate(data):
+                        if example.get('id', f"example_{idx}") in processed_original_ids:
+                            start_index = idx + 1
                 else:
                     # For regular questions, count results directly
                     start_index = len(results)
