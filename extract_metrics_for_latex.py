@@ -19,8 +19,8 @@ def normalize_model_name(model_name):
         'gpt-3.5-turbo': 'GPT-3.5-Turbo',
         'gpt-4o-mini': 'GPT-4O-Mini',
         'gpt-4.1-mini': 'GPT-4.1-Mini',
-        'claude-sonnet-4-5-20250929': 'Claude-3.5-Sonnet',
-        'claude-haiku-4-5-20251001': 'Claude-3.5-Haiku',
+        'claude-sonnet-4-5-20250929': 'Claude-Sonnet-4.5',
+        'claude-haiku-4-5-20251001': 'Claude-Haiku-4.5',
         'Qwen_Qwen2.5-14B-Instruct': 'Qwen2.5-14B',
         'Qwen_Qwen2.5-7B-Instruct': 'Qwen2.5-7B'
     }
@@ -35,8 +35,8 @@ def get_model_order():
         'GPT-3.5-Turbo',
         'GPT-4O-Mini',
         'GPT-4.1-Mini',
-        'Claude-3.5-Sonnet',
-        'Claude-3.5-Haiku',
+        'Claude-Sonnet-4.5',
+        'Claude-Haiku-4.5',
         'Qwen2.5-14B',
         'Qwen2.5-7B'
     ]
@@ -177,8 +177,8 @@ def extract_metrics(summaries_no_context, summaries_wc, base_dir):
             'GPT-3.5-Turbo': 'gpt-3.5-turbo',
             'GPT-4O-Mini': 'gpt-4o-mini',
             'GPT-4.1-Mini': 'gpt-4.1-mini',
-            'Claude-3.5-Sonnet': 'claude-sonnet-4-5-20250929',
-            'Claude-3.5-Haiku': 'claude-haiku-4-5-20251001',
+            'Claude-Sonnet-4.5': 'claude-sonnet-4-5-20250929',
+            'Claude-Haiku-4.5': 'claude-haiku-4-5-20251001',
             'Qwen2.5-14B': 'Qwen_Qwen2.5-14B-Instruct',
             'Qwen2.5-7B': 'Qwen_Qwen2.5-7B-Instruct'
         }
